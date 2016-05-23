@@ -78,6 +78,33 @@ component extends="framework.zero"
       width = int( val( width )),
       height = int( val( height ))
     };
+    
+    
+    // http://www.giancarlogomez.com/2013/08/how-to-fix-orientation-issue-with-ios.html
+    orientation = imageGetEXIFTag( sourceImage, 'orientation');
+     
+    // there is an orientation so lets check it to see what we need to do
+    // if isNull() is not available in your version of ColdFusion 
+    // use ImageGetEXIFMetadata and then check if the structKeyExists
+    if(!isNull(orientation)){     
+      // look to see if the orientation value tells us there is 
+      // a rotation on it (by looking for the string value)
+      hasRotate = findNoCase('rotate',orientation);
+      
+      /*
+      * it did find it so lets copy the image so the Exif Data is removed for the new image
+      * If not on your phone or desktop (mac) the image will still respect the orientation message
+      * even after we fix it, making it appear wrong
+      */
+      if (hasRotate){
+        // strip out all text in the orientation value to get the degree of orientation
+        rotateValue = reReplace(orientation,'[^0-9]','','all');
+        // copy the image to remove the exif data
+        sourceImage = imageCopy(sourceImage,0,0,sourceImage.width,sourceImage.height);
+        // rotate image
+        imageRotate(sourceImage,rotateValue);
+      }
+    }
 
     // in case of square: provide a bigger image to crop later on:
     if( width == "" || height == "" ){
